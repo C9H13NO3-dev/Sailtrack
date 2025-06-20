@@ -1,0 +1,2 @@
+websockets>=10
+aiosqlite>=0.21
