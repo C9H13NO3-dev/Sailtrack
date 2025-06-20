@@ -88,8 +88,8 @@ Open http://localhost:8000/docs for the interactive Swagger UI.
 
 ### Milestone 2 – REST API Skeleton
 
-* [ ] Scaffold FastAPI app & `/health`
-* [ ] `/ais` endpoint returning latest row
+* [x] Scaffold FastAPI app & `/health`
+* [x] `/ais` endpoint returning latest row
 
 ### Milestone 3 – Map Rendering
 

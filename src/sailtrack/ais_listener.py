@@ -4,7 +4,7 @@ import os
 import json
 import asyncio
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import websockets
 import aiosqlite
@@ -28,8 +28,8 @@ async def listen(api_key: str, mmsi: Optional[int] = None) -> None:
         await db.execute(CREATE_TABLE_SQL)
         await db.commit()
 
-        headers = {}
-        subscription = {"APIKey": api_key}
+        headers: dict[str, str] = {}
+        subscription: dict[str, Any] = {"APIKey": api_key}
         if mmsi:
             subscription["FilterMMSI"] = [str(mmsi)]
 
