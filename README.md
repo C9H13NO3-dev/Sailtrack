@@ -82,9 +82,9 @@ Open http://localhost:8000/docs for the interactive Swagger UI.
 
 ### Milestone 1 – AIS Listener (Python)
 
-* [ ] Create minimal `pyproject.toml` / `requirements.txt`
-* [ ] Connect to aisstream.io WebSocket
-* [ ] Persist messages to SQLite (`ais_messages` table)
+* [x] Create minimal `pyproject.toml` / `requirements.txt`
+* [x] Connect to aisstream.io WebSocket
+* [x] Persist messages to SQLite (`ais_messages` table)
 
 ### Milestone 2 – REST API Skeleton
 
