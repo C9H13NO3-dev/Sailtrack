@@ -33,7 +33,7 @@ async def listen(api_key: str, mmsi_list: Iterable[int] | None = None) -> None:
 
         subscription: dict[str, object] = {"APIKey": api_key}
         if mmsi_list:
-            subscription["FilterMMSI"] = [str(m) for m in mmsi_list]
+            subscription["FiltersShipMMSI"] = [str(m) for m in mmsi_list]
 
         async with websockets.connect(AIS_WS_URL) as ws:
             await ws.send(json.dumps(subscription))
