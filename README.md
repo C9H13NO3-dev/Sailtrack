@@ -1,140 +1,164 @@
-# Inkplate Sail Tracker
+# Dockerized AIS Tracker Service
 
-Lightweight end‑to‑end system for family & friends to follow a sailor in real time. Part 1 is a small Dockerized Python service that consumes AIS messages, draws the boat on an OpenSeaMap raster, and exposes a REST API. Part 2 is ultra‑low‑power firmware for the Inkplate 10 e‑Paper display that fetches the data and shows it elegantly in portrait mode.
-
----
-
-## Features
-
-* 🔌 **Zero‑friction deploy** – single Docker container, SQLite storage, no external database.
-* 🌐 **Live AIS feed** – listens to [aisstream.io](https://aisstream.io) WebSocket, filtered by MMSI.
-* 🗺️ **Auto‑generated map** – grabs OpenSeaMap tiles, draws a heading‑aware triangle icon, returns a PNG.
-* 📡 **RESTful API** – `/ais`, `/map.png`, `/health` (with optional `/stats`).
-* 💤 **Inkplate 10 support** – Wi‑Fi, deep‑sleep cycles, crisp portrait e‑paper layout.
+A lightweight, Dockerized Python service that connects to **aisstream.io** via WebSocket to track vessel positions (MMSI), persists data in a SQLite database, and exposes a REST API for querying the latest AIS data, generating map images, and retrieving statistics.
 
 ---
 
-## Quick‑Start (Developer)
+## 🚀 Project Goals
 
-```bash
-# 1. Clone
-$ git clone https://github.com/<you>/inkplate-sail-tracker.git
-$ cd inkplate-sail-tracker
+1. **Reliable Data Ingestion**: Connect to aisstream.io WebSocket API and continuously ingest AIS messages for one or more configured MMSIs.
+2. **Persistence**: Store incoming messages efficiently in an embedded SQLite database within the container.
+3. **RESTful API**:
 
-# 2. Build & run (adjust MMSI & API key)
-$ docker build -t sail-tracker .
-$ docker run -e MMSI=123456789 -e AISSTREAM_API_KEY=<token> -p 8000:8000 sail-tracker
+   * **Latest Data**: Retrieve the most recent AIS record for a given MMSI.
+   * **Map Generation**: Produce a PNG or JPEG map (via OpenSeaMap) showing vessel position, customizable by size and color scheme (grayscale or colored).
+   * **Statistics**: Calculate and return metrics over the past 24 hours (e.g., total distance traveled, average speed over ground).
+4. **Containerization**: Provide a Dockerfile for easy deployment, environment configuration, and scaling.
+5. **Configuration**: Allow configuration of:
 
-# 3. Explore
-Open http://localhost:8000/docs for the interactive Swagger UI.
-```
-
-### Runtime Environment Variables
-
-| Name                | Purpose                             | Default |
-| ------------------- | ----------------------------------- | ------- |
-| `MMSI`              | Vessel MMSI to track                | —       |
-| `AISSTREAM_API_KEY` | Token from aisstream.io             | —       |
-| `MAP_RADIUS_NM`     | Half‑width of map in nautical miles | `12`    |
-| `TILE_CACHE_MIN`    | Minutes to cache OpenSeaMap tiles   | `30`    |
+   * Target MMSI list
+   * Database file path
+   * Map image parameters (size defaults, color scheme)
+   * WebSocket endpoint and reconnect settings
+6. **Testing & CI**: Include unit and integration tests, plus a CI pipeline for linting, building, and pushing the Docker image.
 
 ---
 
-## REST API Overview
+## 📦 Features
 
-| Method | Path       | Description                          |
-| ------ | ---------- | ------------------------------------ |
-| GET    | `/ais`     | Latest AIS message in JSON           |
-| GET    | `/map.png` | 1024 × 1024 PNG with vessel triangle |
-| GET    | `/stats`   | (opt) simple statistics JSON         |
-| GET    | `/health`  | Liveness probe                       |
-
----
-
-## Firmware Sketch (Inkplate 10)
-
-* Located under `/firmware` (PlatformIO project).
-* `config.h` defines Wi‑Fi creds & API base URL.
-* Refresh interval defaults to **5 min** → deep‑sleep to save battery.
-* Uses Inkplate library + ArduinoJSON.
+* **WebSocket Client** for aisstream.io
+* **SQLite** persistence layer with simple ORM (e.g., SQLAlchemy)
+* **FastAPI**-based REST endpoints
+* **Map Rendering** via `staticmap` or similar against OpenSeaMap tiles
+* **Statistics Engine** for distance and SOG aggregations
+* **Dockerized** for one-command startup
+* **Configuration** via environment variables or `.env`
 
 ---
 
-## Architecture
+## 🛠️ Tech Stack
 
-```text
-+-------------+      WebSocket      +------------------+
-| aisstream.io| ───────────────────▶| Python Service   |
-+-------------+                     | FastAPI + SQLite |
-                                     +------------------+
-                                              ▲ REST
-                                              ▼
-                                     +------------------+
-                                     | Inkplate 10 MCU  |
-                                     +------------------+
-```
+* **Language**: Python 3.10+
+* **Web Framework**: FastAPI
+* **Database**: SQLite + SQLAlchemy
+* **WebSocket**: `websockets` or `aiohttp`
+* **Mapping**: `staticmap` or `folium` with OpenSeaMap tiles
+* **Container**: Docker + Docker Compose (optional)
+* **Testing**: Pytest
+* **CI**: GitHub Actions
 
 ---
 
-## Roadmap / Progress Tracker
+## 📅 Roadmap & Milestones
 
-> Tick items as they are completed. Each milestone should be merged via Pull Request.
+### v0.1 — MVP
 
-### Milestone 1 – AIS Listener (Python)
+* [ ] WebSocket client to aisstream.io with configurable MMSI list
+* [ ] Persist raw AIS messages to SQLite
+* [ ] `GET /v1/ais/{mmsi}`: return latest AIS record
+* [ ] Basic Dockerfile and `docker build`
+* [ ] Documentation (this README)
 
-* [x] Create minimal `pyproject.toml` / `requirements.txt`
-* [x] Connect to aisstream.io WebSocket
-* [x] Persist messages to SQLite (`ais_messages` table)
+### v0.2 — Extended Functionality
 
-### Milestone 2 – REST API Skeleton
+* [ ] `GET /v1/map/{mmsi}`: render static map with vessel position
+* [ ] Support image parameters (`width`, `height`, `color_scheme`)
+* [ ] Unit tests for ingestion and API
+* [ ] Docker Compose for local dev
 
-* [x] Scaffold FastAPI app & `/health`
-* [x] `/ais` endpoint returning latest row
+### v0.3 — Statistics & Polishing
 
-### Milestone 3 – Map Rendering
+* [ ] `GET /v1/stats/{mmsi}`: compute 24h distance and average SOG
+* [ ] Integration tests (end-to-end)
+* [ ] CI pipeline: lint, test, build, push
+* [ ] Configuration validation and error handling
 
-* [ ] Compute bounding box from last known position
-* [ ] Fetch OpenSeaMap tiles & stitch
-* [ ] Draw bearing‑aware triangle marker
-* [ ] Expose `/map.png` endpoint
+### v1.0 — Release
 
-### Milestone 4 – Containerization & CI
-
-* [ ] Multi‑stage `Dockerfile` (slim base)
-* [ ] GitHub Action: lint ► test ► image build ► push (GHCR)
-
-### Milestone 5 – Statistics Layer (optional)
-
-* [ ] Average SOG (6 h)
-* [ ] Distance travelled (24 h)
-
-### Milestone 6 – Inkplate Firmware
-
-* [ ] Wi‑Fi connect & OTA config
-* [ ] Fetch `/map.png` & `/ais`
-* [ ] Render portrait layout (compass, SOG, COG, time)
-* [ ] Power‑save deep sleep cycle
-
-### Milestone 7 – Polishing
-
-* [ ] Robust error handling & retries
-* [ ] Bind mount for persistent DB volume
-* [ ] README badges & screenshots
+* [ ] Release-ready Docker image on Docker Hub
+* [ ] Example `docker-compose.yaml`
+* [ ] Full documentation
+* [ ] Performance optimizations
 
 ---
 
-## Contributing
+## ✅ Task Breakdown
 
-1. Fork the repo & create a feature branch.
-2. Commit your changes with clear messages.
-3. Open a Pull Request; link to an open issue or start a discussion.
+1. **Setup & Boilerplate**
 
-All contributions should pass linting (`ruff`), type checks (`mypy`), and unit tests.
+   * Initialize Git repository
+   * Create virtualenv, dependencies in `pyproject.toml`
+   * Base FastAPI app scaffold
+2. **WebSocket Ingestion**
+
+   * Implement connector module
+   * Configure reconnect and error backoff
+   * Define data models and ORM
+3. **Database Layer**
+
+   * SQLAlchemy models for AIS message table
+   * Migration or initial schema script
+4. **API Endpoints**
+
+   * Latest AIS data endpoint
+   * Map generation endpoint
+   * Statistics endpoint
+5. **Mapping Integration**
+
+   * Tile downloader or tile service wrapper
+   * Static map generation logic
+6. **Testing**
+
+   * Unit tests for each module
+   * Fixtures for sample AIS data
+   * Mock WebSocket server
+7. **Dockerization**
+
+   * Write Dockerfile, define runtime configs
+   * Optionally, Docker Compose
+8. **CI/CD**
+
+   * GitHub Actions workflow
+   * Automated build and push steps
+9. **Documentation & Examples**
+
+   * README updates
+   * Usage examples (cURL, Python client snippets)
 
 ---
 
-## License
+## 👷‍♂️ Getting Started
 
-Released under the MIT License. AIS data and map tiles are subject to their respective provider licenses.
+1. **Clone the repo**
 
-> **Disclaimer**: This project is **not for navigation**. Data and map accuracy are not guaranteed. Use at your own risk.
+   ```bash
+   git clone https://github.com/your-org/ais-tracker.git
+   cd ais-tracker
+   ```
+
+2. **Configure** (via `.env` or env vars)
+
+   ```ini
+   AISSTREAM_URL=wss://stream.aisstream.io/v2
+   MMSI_LIST=123456789,987654321
+   DATABASE_URL=sqlite:///./data/ais.db
+   ```
+
+3. **Docker build & run**
+
+   ```bash
+   docker build -t ais-tracker:latest .
+   docker run -d --env-file .env -p 8000:8000 ais-tracker:latest
+   ```
+
+4. **Use the API**
+
+   * Latest data: `GET http://localhost:8000/v1/ais/123456789`
+   * Map: `GET http://localhost:8000/v1/map/123456789?width=800&height=600&color=grayscale`
+   * Stats: `GET http://localhost:8000/v1/stats/123456789`
+
+---
+
+## 📄 License
+
+MIT © Your Name or Org
