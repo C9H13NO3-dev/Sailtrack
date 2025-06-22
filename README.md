@@ -53,18 +53,18 @@ A lightweight, Dockerized Python service that connects to **aisstream.io** via W
 
 ### v0.1 — MVP
 
-* [ ] WebSocket client to aisstream.io with configurable MMSI list
-* [ ] Persist raw AIS messages to SQLite
-* [ ] `GET /v1/ais/{mmsi}`: return latest AIS record
-* [ ] Basic Dockerfile and `docker build`
-* [ ] Documentation (this README)
+* [x] WebSocket client to aisstream.io with configurable MMSI list
+* [x] Persist raw AIS messages to SQLite
+* [x] `GET /v1/ais/{mmsi}`: return latest AIS record
+* [x] Basic Dockerfile and `docker build`
+* [x] Docker Compose for local dev
+* [x] Documentation (this README)
 
 ### v0.2 — Extended Functionality
 
 * [ ] `GET /v1/map/{mmsi}`: render static map with vessel position
 * [ ] Support image parameters (`width`, `height`, `color_scheme`)
 * [ ] Unit tests for ingestion and API
-* [ ] Docker Compose for local dev
 
 ### v0.3 — Statistics & Polishing
 
@@ -115,7 +115,7 @@ A lightweight, Dockerized Python service that connects to **aisstream.io** via W
 7. **Dockerization**
 
    * Write Dockerfile, define runtime configs
-   * Optionally, Docker Compose
+   * Docker Compose configuration
 8. **CI/CD**
 
    * GitHub Actions workflow
@@ -139,19 +139,26 @@ A lightweight, Dockerized Python service that connects to **aisstream.io** via W
 2. **Configure** (via `.env` or env vars)
 
    ```ini
-   AISSTREAM_URL=wss://stream.aisstream.io/v2
+   AISSTREAM_API_KEY=<your_api_key>
    MMSI_LIST=123456789,987654321
-   DATABASE_URL=sqlite:///./data/ais.db
+   DB_PATH=/data/ais.db
    ```
 
 3. **Docker build & run**
 
    ```bash
-   docker build -t ais-tracker:latest .
-   docker run -d --env-file .env -p 8000:8000 ais-tracker:latest
+   docker build -t sailtrack:latest .
+   docker run -d --env-file .env -p 8000:8000 sailtrack:latest
    ```
 
-4. **Use the API**
+4. **Docker Compose**
+
+   ```bash
+   cp .env.example .env
+   docker compose up --build
+   ```
+
+5. **Use the API**
 
    * Latest data: `GET http://localhost:8000/v1/ais/123456789`
    * Map: `GET http://localhost:8000/v1/map/123456789?width=800&height=600&color=grayscale`

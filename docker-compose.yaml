@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  sailtrack:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    env_file:
+      - .env
