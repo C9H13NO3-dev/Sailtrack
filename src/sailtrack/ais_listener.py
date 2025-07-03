@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import traceback
+import logging
 import os
 from datetime import datetime
 from typing import Iterable
@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS ais_messages (
 
 INSERT_SQL = "INSERT INTO ais_messages (timestamp, mmsi, raw_message) VALUES (?, ?, ?)"
 
+# Configure module-level logger. Uvicorn will handle root logging configuration
+# when running the application, so we simply retrieve a named logger here.
+logger = logging.getLogger(__name__)
+
 
 async def listen(api_key: str, mmsi_list: Iterable[int] | None = None) -> None:
     """Connect to aisstream.io and store messages in SQLite."""
@@ -37,22 +41,21 @@ async def listen(api_key: str, mmsi_list: Iterable[int] | None = None) -> None:
         if mmsi_list:
             subscription["FiltersShipMMSI"] = [str(m) for m in mmsi_list]
 
-        print(f"Connecting to {AIS_WS_URL}")
+        logger.info("Connecting to %s", AIS_WS_URL)
         async with websockets.connect(AIS_WS_URL) as ws:
             await ws.send(json.dumps(subscription))
-            print(
-                "Subscribed to AIS stream for %s"
-                % (",".join(str(m) for m in mmsi_list) if mmsi_list else "all ships")
+            logger.info(
+                "Subscribed to AIS stream for %s",
+                ",".join(str(m) for m in mmsi_list) if mmsi_list else "all ships",
             )
             async for message in ws:
                 try:
                     data = json.loads(message)
                     mmsi = int(data.get("MMSI", 0))
-                    print(f"Received AIS message for MMSI {mmsi}")
+                    logger.info("Received AIS message for MMSI %s", mmsi)
                 except Exception:
                     mmsi = 0
-                    print(f"Failed to parse AIS message: {message}")
-                    traceback.print_exc()
+                    logger.exception("Failed to parse AIS message: %s", message)
                 try:
                     await db.execute(
                         INSERT_SQL,
@@ -60,8 +63,7 @@ async def listen(api_key: str, mmsi_list: Iterable[int] | None = None) -> None:
                     )
                     await db.commit()
                 except Exception:
-                    print("Error storing AIS message")
-                    traceback.print_exc()
+                    logger.exception("Error storing AIS message")
 
 async def main() -> None:
     api_key = os.getenv("AISSTREAM_API_KEY")
@@ -69,8 +71,9 @@ async def main() -> None:
         raise SystemExit("AISSTREAM_API_KEY environment variable not set")
     mmsi_env = os.getenv("MMSI_LIST", "")
     mmsi_list = [int(m.strip()) for m in mmsi_env.split(",") if m.strip()] if mmsi_env else []
-    print("Starting AIS listener")
+    logger.info("Starting AIS listener")
     await listen(api_key, mmsi_list)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
