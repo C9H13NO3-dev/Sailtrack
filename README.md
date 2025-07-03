@@ -1,5 +1,7 @@
 # Dockerized AIS Tracker Service
 
+*Version 0.2*
+
 A lightweight, Dockerized Python service that connects to **aisstream.io** via WebSocket to track vessel positions (MMSI), persists data in a SQLite database, and exposes a REST API for querying the latest AIS data, generating map images, and retrieving statistics.
 
 ---
@@ -62,9 +64,9 @@ A lightweight, Dockerized Python service that connects to **aisstream.io** via W
 
 ### v0.2 — Extended Functionality
 
-* [ ] `GET /v1/map/{mmsi}`: render static map with vessel position
-* [ ] Support image parameters (`width`, `height`, `color_scheme`)
-* [ ] Unit tests for ingestion and API
+* [x] `GET /v1/map/{mmsi}`: render static map with vessel position
+* [x] Support image parameters (`width`, `height`, `color_scheme`)
+* [x] Unit tests for ingestion and API
 
 ### v0.3 — Statistics & Polishing
 
@@ -161,7 +163,8 @@ A lightweight, Dockerized Python service that connects to **aisstream.io** via W
 5. **Use the API**
 
    * Latest data: `GET http://localhost:8000/v1/ais/123456789`
-   * Map: `GET http://localhost:8000/v1/map/123456789?width=800&height=600&color=grayscale`
+   * Map: `GET http://localhost:8000/v1/map/123456789?width=800&height=600&color_scheme=grayscale`
+     (omit parameters for defaults `width=600`, `height=400`, `color_scheme=colored`)
    * Stats: `GET http://localhost:8000/v1/stats/123456789`
 
 ---
