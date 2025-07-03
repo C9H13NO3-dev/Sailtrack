@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -11,6 +12,8 @@ import aiosqlite
 from fastapi import FastAPI, HTTPException
 
 from . import ais_listener
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = os.getenv("DB_PATH", "/data/ais.db")
 AISSTREAM_API_KEY = os.getenv("AISSTREAM_API_KEY")
@@ -21,16 +24,19 @@ app = FastAPI(title="Sailtrack API", version="0.1")
 
 @app.on_event("startup")
 async def startup() -> None:
+    logger.info("Starting API with database at %s", DB_PATH)
     app.state.db = await aiosqlite.connect(DB_PATH)
     await app.state.db.execute(ais_listener.CREATE_TABLE_SQL)
     await app.state.db.commit()
     if AISSTREAM_API_KEY:
+        logger.info("Launching AIS listener background task")
         app.state.listener = asyncio.create_task(
             ais_listener.listen(AISSTREAM_API_KEY, MMSI_LIST)
         )
 
 @app.on_event("shutdown")
 async def shutdown() -> None:
+    logger.info("Shutting down API")
     if getattr(app.state, "listener", None):
         app.state.listener.cancel()
     await app.state.db.close()
